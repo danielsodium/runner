@@ -1,0 +1,6 @@
+args:
+- cmd: do
+  run: cd ~ && 
+  args:
+  - cmd: something
+    run: ls
