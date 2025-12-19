@@ -4,6 +4,7 @@ import (
     "fmt"
     "log"
     "os"
+    "strings"
     "os/exec"
     "syscall"
 
@@ -24,18 +25,21 @@ func main() {
 
 	args := os.Args[1:]
 	if len(args) == 0 {
-		fmt.Println("No arguments provided.")
+		fmt.Println("No arguments provided")
 		return
 	}
 
-	var command []string
+	var scriptParts []string
 	pointer := root
+
 	for _, arg := range args {
 		found := false
 		for _, possible := range pointer.Args {
 			if possible.Cmd == arg {
 				pointer = possible
-				command = append(command, possible.Run)
+				if possible.Run != "" {
+					scriptParts = append(scriptParts, possible.Run)
+				}
 				found = true
 				break
 			}
@@ -44,14 +48,22 @@ func main() {
 			log.Fatalf("Could not find command: %v", arg)
 		}
 	}
-	binary, err := exec.LookPath(command[0])
+
+	if len(scriptParts) == 0 {
+		log.Fatal("Nothing to run")
+	}
+
+	fullScript := strings.Join(scriptParts, " ")
+
+	binary, err := exec.LookPath("bash")
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	argv := []string{"bash", "-c", fullScript}
 	env := os.Environ()
-	execErr := syscall.Exec(binary, command, env)
-	
+
+	execErr := syscall.Exec(binary, argv, env)
 	if execErr != nil {
 		log.Fatalf("Failed to start process: %v", execErr)
 	}
